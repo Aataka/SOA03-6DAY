@@ -1,9 +1,14 @@
 # Local .terraform directories
 .terraform/
 
-# 作業用の一時スクリプト（入れ子クォート回避のための _*.sh）とログ
-_*.sh
+# 作業用の一時ファイル（_*.sh スクリプト・_fio_cid.txt 等）とログ
+_*
 *.log
+
+# 方針: GitHubには設定ファイル(.tf等)のみ。記事/学習足場/READMEはローカル限定で保管しない
+docs/
+study/
+README.md
 
 # terraform plan の保存ファイル（バイナリ・機微を含みうる）
 tfplan

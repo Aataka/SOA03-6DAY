@@ -42,13 +42,18 @@ resource "aws_sns_topic_policy" "alerts" {
   policy = data.aws_iam_policy_document.sns_publish.json
 }
 
-# --- H2: EBS ボリューム変更イベント（optimizing/completed/failed）→ SNS ---
+# --- H2: EBS ボリューム変更イベント（modifyVolume）→ SNS ---
+# 重要: detail-type は "EBS Volume Modification" ではない（そんな型は存在せず永久に不発）。
+# 正解は create/delete/attach と共通の "EBS Volume Notification" で、detail.event=modifyVolume で絞る。
 resource "aws_cloudwatch_event_rule" "ebs_modification" {
   name        = "${var.name_prefix}-ebs-volume-modification"
-  description = "EBS ボリュームのオンライン変更を捕捉（modify-volume は即時完了ではない）"
+  description = "EBS volume modifyVolume events (optimizing/completed) -> SNS"
   event_pattern = jsonencode({
     source      = ["aws.ec2"]
-    detail-type = ["EBS Volume Modification"]
+    detail-type = ["EBS Volume Notification"]
+    detail = {
+      event = ["modifyVolume"]
+    }
   })
 }
 
@@ -57,15 +62,15 @@ resource "aws_cloudwatch_event_target" "ebs_modification_sns" {
   target_id = "sns"
   arn       = aws_sns_topic.alerts.arn
 
-  # メールを読みやすく整形（パスが取れなければ null になるだけで失敗しない）
+  # メールを読みやすく整形。ボリュームARNは detail ではなく resources[0] に入る。
   input_transformer {
     input_paths = {
       result = "$.detail.result"
-      volume = "$.detail.source"
       event  = "$.detail.event"
+      volume = "$.resources[0]"
       time   = "$.time"
     }
-    input_template = "\"EBS Volume Modification: <event> result=<result> volume=<volume> at <time>\""
+    input_template = "\"EBS Volume Notification: <event> result=<result> volume=<volume> at <time>\""
   }
 }
 
