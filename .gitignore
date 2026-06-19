@@ -5,10 +5,9 @@
 _*
 *.log
 
-# 方針: GitHubには設定ファイル(.tf等)のみ。記事/学習足場/READMEはローカル限定で保管しない
+# 方針: GitHubには設定ファイル(.tf等)とREADMEのみ。記事(docs)・学習足場(study)はローカル限定
 docs/
 study/
-README.md
 
 # terraform plan の保存ファイル（バイナリ・機微を含みうる）
 tfplan
