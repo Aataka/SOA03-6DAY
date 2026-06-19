@@ -1,6 +1,14 @@
 # Local .terraform directories
 .terraform/
 
+# 作業用の一時スクリプト（入れ子クォート回避のための _*.sh）とログ
+_*.sh
+*.log
+
+# terraform plan の保存ファイル（バイナリ・機微を含みうる）
+tfplan
+*.tfplan
+
 # .tfstate files
 *.tfstate
 *.tfstate.*

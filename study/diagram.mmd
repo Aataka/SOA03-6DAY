@@ -1,0 +1,22 @@
+%% SOA03-6DAY EBS 容量・パフォーマンス・データ保護 ＋ 運用監視
+%% 公開§1のAsciiアートと同じ構造（タイプして構造再現する用）
+flowchart TB
+  op["運用者"] -->|"SSM Session Manager / send-command"| host
+
+  subgraph host["CommandHost (t3.small / egress-only SG / IMDSv2必須)"]
+    fio["fio 負荷生成 (localhost)"] --> md0["RAID0 /dev/md0 → /data1"]
+  end
+
+  md0 --> v1["gp3 firstvol<br/>3000→5000 IOPS / 125→250 MB/s"]
+  md0 --> v2["gp3 secondvol<br/>3000→5000 IOPS / 125→250 MB/s"]
+
+  v1 -. "CWエージェント不要で自動送出" .-> cw["CloudWatch AWS/EBS"]
+  v2 -. "自動送出" .-> cw
+  cw -->|"(ReadOps+WriteOps)/PERIOD ≥ 2700 / VolumeQueueLength ≥ 4"| al["アラーム ★H1"]
+  al --> sns["SNS"]
+
+  v1 -->|"modify-volume (即時完了ではない)"| eb["EventBridge<br/>EBS Volume Modification ★H2"]
+  eb -->|"result=optimizing/completed"| sns
+
+  host -->|"instance単位スナップショット ★H3"| snap["マルチVolスナップショット<br/>(クラッシュ整合)"]
+  snap --> restore["復元ボリューム → /snapdata<br/>(RAID0情報ごと復元)"]
